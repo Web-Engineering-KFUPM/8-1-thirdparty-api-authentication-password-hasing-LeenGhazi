@@ -268,7 +268,31 @@ app.post("/register", async (req, res) => {
 // =========================
 app.post("/login", async (req, res) => {
   // Implement logic here based on the TODO 2.
-});
+  try{
+    const { email, password } = req.body || {}; // read body
+    if (!email || !password) { // validate
+      return res.status(400).json({ error: "Email and password are required" });
+    }
+    const user = users.find((u) => u.email === email); // find the user
+    if (!user) {
+      return res.status(400).json({ error: "User not found" });
+    }
+    const match = await bcrypt.compare(password, user.passwordHash); // compare the passwords
+    if (!match) {
+      return res.status(400).json({ error: "Wrong password" });
+    }
+    const token = jwt.sign( // create JWT token
+      { email },
+      JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+    return res.json({ token }); // return the token
+    } catch (err) {
+      console.error("Login error:", err);
+      return res.status(500).json({ error: "Server error during login" });
+    }
+  }
+);
 
 // =========================
 // Protected Weather API
